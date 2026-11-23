@@ -1,0 +1,32 @@
+{
+	admin off
+	auto_https off
+	persist_config off
+	servers {
+		trusted_proxies static private_ranges
+	}
+	log {
+		output stdout
+		level WARN
+	}
+}
+
+:{$PORT:8080} {
+	# Open health path for Railway. It answers 200 only when GitDiagram's own
+	# readiness check passes: API key set, bucket and Redis reachable.
+	handle /healthz {
+		rewrite * /api/healthz
+		reverse_proxy 127.0.0.1:3000
+	}
+
+	# Everything else (web UI, API, /mcp) needs the generated login, because
+	# every new diagram spends the deployer's OpenAI key.
+	handle {
+		basic_auth {
+			{$GITDIAGRAM_USERNAME} {$GITDIAGRAM_PASSWORD_HASH}
+		}
+		reverse_proxy 127.0.0.1:3000 {
+			flush_interval -1
+		}
+	}
+}
