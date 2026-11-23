@@ -30,7 +30,10 @@ COPY --from=dependencies /app/node_modules ./node_modules
 ENV NEXT_TELEMETRY_DISABLED=1 \
     RAILWAY_DOCKER_BUILD=1 \
     NEXT_SKIP_TYPECHECK=1 \
-    NODE_OPTIONS=--max-old-space-size=3072
+    NODE_OPTIONS=--max-old-space-size=2560 \
+    CIRCLE_NODE_TOTAL=2
+# CIRCLE_NODE_TOTAL caps Next's build workers (it otherwise starts one per host
+# CPU, which ran out of memory in a 4 GB builder).
 RUN node scripts/build-mcp-app.mjs && node node_modules/next/dist/bin/next build
 
 # The Redis bridge needs only the official Redis client (no dependencies).
